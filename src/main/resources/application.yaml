@@ -1,0 +1,73 @@
+server:
+  port: ${COURIER_PORT:8081}
+
+spring:
+  application:
+    name: courier-service
+
+  # Desactiva Config Server
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+
+  # Configuración de la Base de Datos MySQL exclusiva para este microservicio
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:db_courier}?useSSL=false&serverTimezone=UTC
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Configuración del Cliente de Spring Cloud Config (para cuando conectes tu Config Server)
+  cloud:
+    config:
+      uri: ${CONFIG_SERVER_URI:http://localhost:8888}
+      fail-fast: false
+
+  # -----------------------------------------------------------------
+  # Configuración de JPA e Hibernate (ORM)
+  # -----------------------------------------------------------------
+  jpa:
+    hibernate:
+      # 'update' valida el esquema y actualiza las tablas automáticamente sin perder datos existentes
+      ddl-auto: update
+    # Muestra en consola las sentencias SQL generadas por Hibernate
+    show-sql: true
+    properties:
+      hibernate:
+        # Formatea el SQL en la consola para una mejor legibilidad y depuración
+        format_sql: true
+    database-platform: org.hibernate.dialect.MySQLDialect
+
+    # Permite que Hibernate cree/actualice las tablas PRIMERO
+    # antes de que Spring ejecute el script de datos iniciales (data.sql)
+    defer-datasource-initialization: true
+
+  # -----------------------------------------------------------------
+  # Inicialización de Datos (Scripts SQL)
+  # -----------------------------------------------------------------
+  sql:
+    init:
+      # Fuerza la ejecución automática del archivo data.sql al arrancar el microservicio
+      mode: always
+
+# =====================================================================
+# Configuración de Documentación Interactiva (OpenAPI 3 / Swagger)
+# =====================================================================
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    # Ordena automáticamente las operaciones HTTP en la interfaz gráfica (GET, POST, etc.)
+    operationsSorter: method
+
+# =====================================================================
+# Configuración de Niveles de Registro (Logging) para visualizar datos
+# =====================================================================
+logging:
+  level:
+    # Muestra las consultas SQL ejecutadas por Hibernate
+    org.hibernate.SQL: DEBUG
+    # Muestra los valores y parámetros reales enviados a la base de datos
+    org.hibernate.orm.jdbc.bind: TRACE
+    # Muestra la ejecución de los scripts de inicialización SQL (data.sql)
+    org.springframework.jdbc.datasource.init: DEBUG
