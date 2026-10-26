@@ -59,7 +59,7 @@ public class RepartidorController {
      * @param dniRepartidor Documento de Identificación Nacional del repartidor a buscar.
      * @return {@link ResponseEntity} con HTTP 200 (OK) y el DTO con el estado actualizado.
      */
-    @PutMapping("/{dniRepartidor}")
+    @PutMapping("/{dniRepartidor}/estado")
     public ResponseEntity<RepartidorResponseDto> gestionarEstado(@PathVariable String dniRepartidor){
         return ResponseEntity.ok(repartidorService.gestionarEstado(dniRepartidor));
     }
@@ -86,5 +86,23 @@ public class RepartidorController {
     public ResponseEntity<List<RepartidorResponseDto>> listarRepartidores(@RequestParam(required = false) EstadoRepartidor estado) {
         List<RepartidorResponseDto> repartidores = repartidorService.listarRepartidores(estado);
         return ResponseEntity.ok(repartidores);
+    }
+
+    /**
+     * Endpoint para la baja de repartidores a partir de su DNI.
+     *
+     * @param dniRepartidor Documento de Identificación Nacional del repartidor a eliminar.
+     * @return {@link ResponseEntity} con HTTP 204(No Content) tras la baja exitosa del repartidor.
+     */
+    @DeleteMapping("/{dniRepartidor}")
+    public ResponseEntity<Void> eliminarRepartidor (@PathVariable String dniRepartidor) {
+        repartidorService.eliminarRepartidor(dniRepartidor);
+        return ResponseEntity.noContent().build();
+
+    }
+
+    @GetMapping("/{dniRepartidor}/estaDisponible")
+    public boolean verificarDisponibilidad (@PathVariable String dniRepartidor) {
+        return repartidorService.estaDisponible(repartidorService.obtenerPorDni(dniRepartidor).getIdRepartidor());
     }
 }

@@ -1,0 +1,27 @@
+info:
+  name: 2 - Actualizar repartidor (200 OK)
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: "{{base-url}}/:dni"
+  params:
+    - name: dni
+      value: "32405211"
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "telefono": "3883095156",
+        "tipoVehiculo": "AUTO"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

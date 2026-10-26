@@ -1,0 +1,20 @@
+info:
+  name: 6 - Eliminar repartidor (204 NO CONTENT)
+  type: http
+  seq: 6
+
+http:
+  method: DELETE
+  url: "{{base-url}}/:dniRepartidor"
+  params:
+    - name: dniRepartidor
+      value: "32405211"
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
