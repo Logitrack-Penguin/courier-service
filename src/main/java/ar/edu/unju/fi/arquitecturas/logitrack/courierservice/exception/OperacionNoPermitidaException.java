@@ -1,4 +1,4 @@
-package ar.edu.unju.fi.arquitecturas.logitrack.shipmentservice.exception;
+package ar.edu.unju.fi.arquitecturas.logitrack.courierservice.exception;
 
 /**
  * Excepción personalizada que hereda de {@link RuntimeException}.

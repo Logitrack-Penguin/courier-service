@@ -1,4 +1,4 @@
-package ar.edu.unju.fi.arquitecturas.logitrack.shipmentservice.exception;
+package ar.edu.unju.fi.arquitecturas.logitrack.courierservice.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -21,7 +21,7 @@ import java.util.Map;
  * @author Logitrack-Penguin
  * @version 1.0.0
  * @since 17-10-2026
- * @see OperacionInvalidaException
+ * @see OperacionNoPermitidaException
  * @see OperacionNoPermitidaException
  * @see RecursoDuplicadoException
  * @see RecursoNoEncontradoException

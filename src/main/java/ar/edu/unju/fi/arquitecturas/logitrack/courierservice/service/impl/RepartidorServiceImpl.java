@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,6 +52,8 @@ public class RepartidorServiceImpl implements RepartidorService {
         }
 
         Repartidor nuevoRepartidor = RepartidorMapper.toEntity(requestDto);
+        nuevoRepartidor.setEstadoRepartidor(EstadoRepartidor.ACTIVO);
+        nuevoRepartidor.setFechaCreacion(LocalDateTime.now());
         Repartidor guardado = repartidorRepository.save(nuevoRepartidor);
 
         log.info("Repartidor registrado exitosamente con ID: {}", guardado.getIdRepartidor());
@@ -78,7 +81,7 @@ public class RepartidorServiceImpl implements RepartidorService {
         if (requestDto.getTipoVehiculo() != null){
             repartidorExistente.setTipoVehiculo(requestDto.getTipoVehiculo());
         }
-
+        repartidorExistente.setUltimaModificacion(LocalDateTime.now());
         Repartidor repartidorActualizado = repartidorRepository.save(repartidorExistente);
         return RepartidorMapper.toResponseDto(repartidorActualizado);
     }
@@ -160,5 +163,21 @@ public class RepartidorServiceImpl implements RepartidorService {
         return repartidores.stream()
                 .map(RepartidorMapper::toResponseDto)
                 .toList();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void eliminarRepartidor(String dniRepartidor){
+        log.info("Iniciando proceso de eliminar repartidor con DNI: {}", dniRepartidor);
+        Repartidor repartidor = repartidorRepository.findByDni(dniRepartidor)
+                .orElseThrow(() -> {
+                    log.error("No se encontró un repartidor con el DNI: {}" , dniRepartidor);
+                    return new RecursoNoEncontradoException("El repartidor no existe en la Base de Datos.");
+                });
+        repartidorRepository.delete(repartidor);
+        log.info("Repartidor con DNI: {} eliminado exitosamente.", dniRepartidor );
     }
 }
