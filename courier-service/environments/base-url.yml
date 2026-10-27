@@ -1,5 +1,5 @@
 name: base-url
 variables:
   - name: base-url
-    value: http://localhost:8081/api/v1/repartidores
+    value: http://localhost:8082/api/v1/repartidores
     description: ""
