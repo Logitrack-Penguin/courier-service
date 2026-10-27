@@ -1,0 +1,26 @@
+info:
+  name: 1 - Registrar repartidor (201 CREATED)
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{base-url}}"
+  body:
+    type: json
+    data: |-
+      {
+        "dni": "32405211",
+        "nombre": "Mario Alberto",
+        "apellido": "Fernández",
+        "telefono": "3884108213",
+        "tipoVehiculo": "MOTO"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

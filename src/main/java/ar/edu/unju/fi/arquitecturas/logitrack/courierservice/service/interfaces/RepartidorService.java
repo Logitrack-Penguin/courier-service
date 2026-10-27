@@ -6,6 +6,7 @@ import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.enums.EstadoReparti
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.exception.RecursoNoEncontradoException;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.exception.RecursoDuplicadoException;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.model.Repartidor;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -83,4 +84,12 @@ public interface RepartidorService {
      * @return Lista de {@link RepartidorResponseDto}.
      */
     List<RepartidorResponseDto> listarRepartidores(EstadoRepartidor estado);
+
+    /**
+     * Permite eliminar un repartidor registrado ingresando su DNI
+     *
+     * @param dniRepartidor Documento de Identificación Nacional del repartidor a eliminar.
+     * @throws RecursoNoEncontradoException En caso de no encontrar ningún repartidor con el DNI ingresado.
+     */
+    void eliminarRepartidor(String dniRepartidor);
 }

@@ -1,0 +1,14 @@
+opencollection: 1.0.0
+info:
+  name: "courier-service-API"
+  type: workspace
+
+collections:
+  - name: "Peticiones CRUD"
+    path: "collections/Peticiones CRUD"
+  - name: "Validar Dsiponibilidad"
+    path: "collections/Validar Dsiponibilidad"
+
+specs:
+
+docs: ''
