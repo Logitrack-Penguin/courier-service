@@ -105,4 +105,10 @@ public class RepartidorController {
     public boolean verificarDisponibilidad (@PathVariable String dniRepartidor) {
         return repartidorService.estaDisponible(repartidorService.obtenerPorDni(dniRepartidor).getIdRepartidor());
     }
+
+    @PutMapping("/{dniRepartidor}/cambiarEstado")
+    public ResponseEntity<RepartidorResponseDto> cambiarEstado(@PathVariable String dniRepartidor){
+        RepartidorResponseDto repartidorActualizado = repartidorService.gestionarEstado(dniRepartidor);
+        return ResponseEntity.ok(repartidorActualizado);
+    }
 }
