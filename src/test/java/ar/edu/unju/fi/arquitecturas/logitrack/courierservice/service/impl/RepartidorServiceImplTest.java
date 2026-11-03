@@ -420,7 +420,7 @@ class RepartidorServiceImplTest {
     }
 
     /**
-     * Valida que se lance una excepción de tipo {@link RecursoNoEncontradoException}
+     * Valida que se lancdocker compose upe una excepción de tipo {@link RecursoNoEncontradoException}
      * al intentar buscar un repartidor mediante un ID que no existe en el sistema.
      */
     @Test

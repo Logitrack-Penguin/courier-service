@@ -7,7 +7,7 @@ spring:
 
   # Desactiva Config Server
   config:
-    import: configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+    import: configserver:${CONFIG_SERVER_URI:http://localhost:8085}
 
   # Configuración de la Base de Datos MySQL exclusiva para este microservicio
   datasource:
@@ -16,11 +16,7 @@ spring:
     password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  # Configuración del Cliente de Spring Cloud Config (para cuando conectes tu Config Server)
-  cloud:
-    config:
-      uri: ${CONFIG_SERVER_URI:http://localhost:8888}
-      fail-fast: false
+
 
   # -----------------------------------------------------------------
   # Configuración de JPA e Hibernate (ORM)
