@@ -7,7 +7,7 @@ spring:
 
   # Desactiva Config Server
   config:
-    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+    import: configserver:${CONFIG_SERVER_URI:http://localhost:8888}
 
   # Configuración de la Base de Datos MySQL exclusiva para este microservicio
   datasource:
