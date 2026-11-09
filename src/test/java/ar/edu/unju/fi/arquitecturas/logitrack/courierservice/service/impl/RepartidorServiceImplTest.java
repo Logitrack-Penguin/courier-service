@@ -235,20 +235,82 @@ class RepartidorServiceImplTest {
 
     /**
      * Valida que se lance una excepción de tipo {@link RecursoDuplicadoException}
-     * al intentar actualizar un repartidor con un teléfono que ya pertenece a otro registro.
+     * al intentar actualizar un repartidor con un teléfono que ya pertenece a <b>otro</b> registro.
+     * <p>
+     * Se usa un teléfono distinto al del repartidor editado: enviar su propio teléfono
+     * ya no se considera duplicado (corrección B11 / LT4-22).
+     * </p>
      */
     @Test
-    @DisplayName("Debe lanzar RecursoDuplicadoException al actualizar con un teléfono ya registrado")
+    @DisplayName("Debe lanzar RecursoDuplicadoException al actualizar con el teléfono de otro repartidor")
     void actualizarRepartidor_LanzaExcepcion_TelefonoDuplicado() {
         // Given
+        RepartidorRequestDto cambios = RepartidorRequestDto.builder()
+                .telefono("3889998888")
+                .tipoVehiculo("Motocicleta")
+                .build();
+
         when(repartidorRepository.findByDni(DNI)).thenReturn(Optional.of(repartidorMock));
-        when(repartidorRepository.existsByTelefono(requestDto.getTelefono())).thenReturn(true);
+        when(repartidorRepository.existsByTelefono("3889998888")).thenReturn(true);
 
         // When & Then
         assertThrows(RecursoDuplicadoException.class,
-                () -> repartidorService.actualizarRepartidor(DNI, requestDto));
+                () -> repartidorService.actualizarRepartidor(DNI, cambios));
 
+        assertEquals("3884567890", repartidorMock.getTelefono());
         verify(repartidorRepository, never()).save(any(Repartidor.class));
+    }
+
+    /**
+     * Valida que se pueda actualizar solo el vehículo de un repartidor enviando su mismo
+     * teléfono, sin que se considere duplicado (corrección B11 / LT4-22).
+     */
+    @Test
+    @DisplayName("Debe permitir cambiar el vehículo enviando el mismo teléfono del repartidor")
+    void actualizarRepartidor_MismoTelefono_CambiaVehiculo_Exitoso() {
+        // Given
+        RepartidorRequestDto cambios = RepartidorRequestDto.builder()
+                .telefono("3884567890")
+                .tipoVehiculo("Camioneta")
+                .build();
+
+        when(repartidorRepository.findByDni(DNI)).thenReturn(Optional.of(repartidorMock));
+        when(repartidorRepository.save(any(Repartidor.class))).thenReturn(repartidorMock);
+
+        // When
+        RepartidorResponseDto response = repartidorService.actualizarRepartidor(DNI, cambios);
+
+        // Then
+        assertNotNull(response);
+        assertEquals("3884567890", repartidorMock.getTelefono());
+        assertEquals("Camioneta", repartidorMock.getTipoVehiculo());
+        verify(repartidorRepository, never()).existsByTelefono(anyString());
+        verify(repartidorRepository, times(1)).save(repartidorMock);
+    }
+
+    /**
+     * Valida que, si el teléfono no viene en la solicitud, se conserve el teléfono actual
+     * del repartidor en lugar de guardarse como nulo.
+     */
+    @Test
+    @DisplayName("Debe conservar el teléfono actual si la solicitud no trae teléfono")
+    void actualizarRepartidor_SinTelefono_ConservaElAnterior() {
+        // Given
+        RepartidorRequestDto cambios = RepartidorRequestDto.builder()
+                .tipoVehiculo("Bicicleta")
+                .build();
+
+        when(repartidorRepository.findByDni(DNI)).thenReturn(Optional.of(repartidorMock));
+        when(repartidorRepository.save(any(Repartidor.class))).thenReturn(repartidorMock);
+
+        // When
+        repartidorService.actualizarRepartidor(DNI, cambios);
+
+        // Then
+        assertEquals("3884567890", repartidorMock.getTelefono());
+        assertEquals("Bicicleta", repartidorMock.getTipoVehiculo());
+        verify(repartidorRepository, never()).existsByTelefono(anyString());
+        verify(repartidorRepository, times(1)).save(repartidorMock);
     }
 
 

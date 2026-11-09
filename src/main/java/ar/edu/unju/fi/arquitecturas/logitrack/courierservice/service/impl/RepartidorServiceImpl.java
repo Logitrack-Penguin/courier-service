@@ -73,11 +73,16 @@ public class RepartidorServiceImpl implements RepartidorService {
                     log.error("Fallo operativo de actualización: Repartidor inexistente con el DNI: {}", dniRepartidor);
                     return new RecursoNoEncontradoException("No es posible realizar la actualización. Repartidor no encontrado con DNI: " + dniRepartidor);
                 });
-        if (requestDto.getTelefono() != null && !repartidorRepository.existsByTelefono(requestDto.getTelefono())){
-            repartidorExistente.setTelefono(requestDto.getTelefono());
-        }else {
-            throw  new RecursoDuplicadoException("No es posible realizar la actualización. El teléfono ya está registrado.");
+
+        String telefono = requestDto.getTelefono();
+        if (telefono != null) {
+            if (!telefono.equals(repartidorExistente.getTelefono())
+                    && repartidorRepository.existsByTelefono(telefono)) {
+                throw new RecursoDuplicadoException("No es posible realizar la actualización. El teléfono ya está registrado.");
+            }
+            repartidorExistente.setTelefono(telefono);
         }
+
         if (requestDto.getTipoVehiculo() != null){
             repartidorExistente.setTipoVehiculo(requestDto.getTipoVehiculo());
         }
