@@ -5,6 +5,7 @@ import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.dto.response.Repart
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.enums.EstadoRepartidor;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.exception.RecursoDuplicadoException;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.exception.RecursoNoEncontradoException;
+import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.messaging.RepartidorDadoDeBaja;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.model.Repartidor;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.repository.RepartidorRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +61,10 @@ class RepartidorServiceImplTest {
     /** Mock del repositorio de repartidores para aislar la persistencia en memoria. */
     @Mock
     private RepartidorRepository repartidorRepository;
+
+    /** Mock del publicador de eventos internos de Spring (LT4-34). */
+    @Mock
+    private ApplicationEventPublisher eventos;
 
     /** Instancia de la clase de servicio bajo prueba, con las dependencias simuladas inyectadas. */
     @InjectMocks
@@ -422,6 +428,9 @@ class RepartidorServiceImplTest {
         // Then
         assertEquals(EstadoRepartidor.INACTIVO, response.getEstadoRepartidor());
         verify(repartidorRepository, times(1)).save(repartidorMock);
+        // LT4-34: al quedar INACTIVO se anuncia la baja para que shipment libere sus envíos.
+        verify(eventos).publishEvent(new RepartidorDadoDeBaja(RepartidorDadoDeBaja.DESACTIVADO, DNI,
+                "ACTIVO", "INACTIVO"));
     }
 
     /**
@@ -441,6 +450,8 @@ class RepartidorServiceImplTest {
 
         // Then
         assertEquals(EstadoRepartidor.ACTIVO, response.getEstadoRepartidor());
+        // LT4-34: reactivar no es una baja, no se publica nada.
+        verifyNoInteractions(eventos);
     }
 
     /**
@@ -457,6 +468,7 @@ class RepartidorServiceImplTest {
         assertThrows(RecursoNoEncontradoException.class, () -> repartidorService.gestionarEstado(DNI));
 
         verify(repartidorRepository, never()).save(any(Repartidor.class));
+        verifyNoInteractions(eventos);
     }
 
 
@@ -558,6 +570,9 @@ class RepartidorServiceImplTest {
 
         // Then
         verify(repartidorRepository, times(1)).delete(repartidorMock);
+        // LT4-34: la eliminación también se anuncia, con el estado que tenía y sin estado nuevo.
+        verify(eventos).publishEvent(new RepartidorDadoDeBaja(RepartidorDadoDeBaja.ELIMINADO, DNI,
+                "ACTIVO", null));
     }
 
     /**
@@ -574,5 +589,6 @@ class RepartidorServiceImplTest {
         assertThrows(RecursoNoEncontradoException.class, () -> repartidorService.eliminarRepartidor(DNI));
 
         verify(repartidorRepository, never()).delete(any(Repartidor.class));
+        verifyNoInteractions(eventos);
     }
 }
