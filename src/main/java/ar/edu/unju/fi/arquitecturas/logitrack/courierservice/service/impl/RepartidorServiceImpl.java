@@ -6,11 +6,13 @@ import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.enums.EstadoReparti
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.exception.RecursoDuplicadoException;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.exception.RecursoNoEncontradoException;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.mapper.RepartidorMapper;
+import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.messaging.RepartidorDadoDeBaja;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.model.Repartidor;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.repository.RepartidorRepository;
 import ar.edu.unju.fi.arquitecturas.logitrack.courierservice.service.interfaces.RepartidorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,12 @@ import java.util.UUID;
 public class RepartidorServiceImpl implements RepartidorService {
 
     private final RepartidorRepository repartidorRepository;
+
+    /**
+     * Publica eventos internos de Spring (LT4-34). Si la mensajería está activa,
+     * {@code RepartidorEventPublisher} los reenvía a RabbitMQ después del commit.
+     */
+    private final ApplicationEventPublisher eventos;
 
     /**
      * {@inheritDoc}
@@ -136,6 +144,11 @@ public class RepartidorServiceImpl implements RepartidorService {
             repartidorEncontrado.setEstadoRepartidor(EstadoRepartidor.ACTIVO);
         }
         Repartidor repartidorActualizado = repartidorRepository.save(repartidorEncontrado);
+        if (repartidorActualizado.getEstadoRepartidor() == EstadoRepartidor.INACTIVO) {
+            // Avisa a shipment para que libere los envíos asignados a este repartidor.
+            eventos.publishEvent(new RepartidorDadoDeBaja(RepartidorDadoDeBaja.DESACTIVADO, dniRepartidor,
+                    EstadoRepartidor.ACTIVO.name(), EstadoRepartidor.INACTIVO.name()));
+        }
         return RepartidorMapper.toResponseDto(repartidorActualizado);
     }
 
@@ -183,6 +196,8 @@ public class RepartidorServiceImpl implements RepartidorService {
                     return new RecursoNoEncontradoException("El repartidor no existe en la Base de Datos.");
                 });
         repartidorRepository.delete(repartidor);
+        eventos.publishEvent(new RepartidorDadoDeBaja(RepartidorDadoDeBaja.ELIMINADO, dniRepartidor,
+                repartidor.getEstadoRepartidor().name(), null));
         log.info("Repartidor con DNI: {} eliminado exitosamente.", dniRepartidor );
     }
 }
