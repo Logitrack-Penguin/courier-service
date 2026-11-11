@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -19,6 +20,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -122,5 +124,94 @@ class RepartidorControllerTest {
                         .content(json("28111222", "3881112222")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.dni").value("28111222"));
+    }
+
+    // --- Errores 3 y 4 de LT4-40: un REPARTIDOR solo ve y cambia su propia ficha ---
+
+    private static final String DNI_PROPIO = "30111222";
+    private static final String DNI_AJENO = "30333444";
+
+    private static RepartidorResponseDto repartidor(String dni) {
+        return RepartidorResponseDto.builder()
+                .idRepartidor(UUID.randomUUID())
+                .dni(dni)
+                .estadoRepartidor(EstadoRepartidor.ACTIVO)
+                .build();
+    }
+
+    @Test
+    @DisplayName("GET lista: un REPARTIDOR solo recibe su propia ficha")
+    void listar_Repartidor_SoloRecibeLaSuya() throws Exception {
+        when(repartidorService.listarRepartidores(null)).thenReturn(List.of(repartidor(DNI_PROPIO), repartidor(DNI_AJENO)));
+
+        mockMvc.perform(get(BASE).header("X-User-Roles", "REPARTIDOR").header("X-User-Dni", DNI_PROPIO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].dni").value(DNI_PROPIO));
+    }
+
+    @Test
+    @DisplayName("GET lista: un REPARTIDOR sin DNI en el token recibe una lista vacía")
+    void listar_RepartidorSinDni_ListaVacia() throws Exception {
+        when(repartidorService.listarRepartidores(null)).thenReturn(List.of(repartidor(DNI_PROPIO)));
+
+        mockMvc.perform(get(BASE).header("X-User-Roles", "REPARTIDOR"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    @DisplayName("GET lista: el ADMIN recibe todos")
+    void listar_Admin_RecibeTodos() throws Exception {
+        when(repartidorService.listarRepartidores(null)).thenReturn(List.of(repartidor(DNI_PROPIO), repartidor(DNI_AJENO)));
+
+        mockMvc.perform(get(BASE).header("X-User-Roles", "ADMIN"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    @DisplayName("GET detalle: un REPARTIDOR ve el suyo (200) y no el de otro (403)")
+    void obtener_Repartidor_PropioSiAjenoNo() throws Exception {
+        when(repartidorService.obtenerPorDni(DNI_PROPIO)).thenReturn(repartidor(DNI_PROPIO));
+
+        mockMvc.perform(get(BASE + "/" + DNI_PROPIO).header("X-User-Roles", "REPARTIDOR").header("X-User-Dni", DNI_PROPIO))
+                .andExpect(status().isOk());
+        mockMvc.perform(get(BASE + "/" + DNI_AJENO).header("X-User-Roles", "REPARTIDOR").header("X-User-Dni", DNI_PROPIO))
+                .andExpect(status().isForbidden());
+
+        verify(repartidorService, never()).obtenerPorDni(DNI_AJENO);
+    }
+
+    @Test
+    @DisplayName("PUT estado: un REPARTIDOR cambia el suyo (200) y no el de otro (403)")
+    void estado_Repartidor_PropioSiAjenoNo() throws Exception {
+        when(repartidorService.gestionarEstado(DNI_PROPIO)).thenReturn(repartidor(DNI_PROPIO));
+
+        mockMvc.perform(put(BASE + "/" + DNI_PROPIO + "/estado").header("X-User-Roles", "REPARTIDOR").header("X-User-Dni", DNI_PROPIO))
+                .andExpect(status().isOk());
+        mockMvc.perform(put(BASE + "/" + DNI_AJENO + "/estado").header("X-User-Roles", "REPARTIDOR").header("X-User-Dni", DNI_PROPIO))
+                .andExpect(status().isForbidden());
+
+        verify(repartidorService, never()).gestionarEstado(DNI_AJENO);
+    }
+
+    @Test
+    @DisplayName("PUT estado: el ADMIN puede cambiar el de cualquiera")
+    void estado_Admin_Cualquiera() throws Exception {
+        when(repartidorService.gestionarEstado(DNI_AJENO)).thenReturn(repartidor(DNI_AJENO));
+
+        mockMvc.perform(put(BASE + "/" + DNI_AJENO + "/estado").header("X-User-Roles", "ADMIN"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Sin cabeceras (llamada interna de shipment por Feign) no se restringe")
+    void sinCabeceras_NoSeRestringe() throws Exception {
+        when(repartidorService.obtenerPorDni(DNI_AJENO)).thenReturn(repartidor(DNI_AJENO));
+        when(repartidorService.estaDisponible(any())).thenReturn(true);
+
+        mockMvc.perform(get(BASE + "/" + DNI_AJENO)).andExpect(status().isOk());
+        mockMvc.perform(get(BASE + "/" + DNI_AJENO + "/estaDisponible")).andExpect(status().isOk());
     }
 }
